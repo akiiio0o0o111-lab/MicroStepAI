@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import {
+  ArrowDown,
+  ArrowUp,
   Check,
   ChevronDown,
   Clock,
@@ -7,16 +9,20 @@ import {
   HelpCircle,
   Loader2,
   Pause,
+  Pencil,
   Play,
   RotateCcw,
   Scissors,
   TimerOff,
+  Trash2,
 } from 'lucide-react';
 import { useStepTimer, formatTime } from '@/hooks/useStepTimer';
+import { StepEditor } from '@/components/StepEditor';
 import type {
   Step,
   StepAdjustAction,
   StepBlocker,
+  StepInput,
   StepTimerState,
 } from '@/types';
 import { playChime } from '@/lib/sound';
@@ -28,6 +34,13 @@ interface Props {
   onToggleDone: () => void;
   onTimerChange?: (timer: StepTimerState) => void;
   onAdjust: (action: StepAdjustAction, blocker?: StepBlocker) => void;
+  onEdit?: (input: StepInput) => void;
+  onDelete?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  canDelete?: boolean;
   adjusting?: boolean;
   adjustDisabled?: boolean;
 }
@@ -51,6 +64,37 @@ const ORIGIN_LABELS: Record<StepAdjustAction, string> = {
 const CHIP_CLASS =
   'inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50';
 
+function ActionButton({
+  label,
+  onClick,
+  disabled,
+  danger,
+  children,
+}: {
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={`grid h-7 w-7 place-items-center rounded-lg text-slate-500 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-35 ${
+        danger
+          ? 'hover:bg-rose-50 hover:text-rose-600'
+          : 'hover:bg-indigo-50 hover:text-indigo-600'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function StepCard({
   step,
   index,
@@ -58,6 +102,13 @@ export function StepCard({
   onToggleDone,
   onTimerChange,
   onAdjust,
+  onEdit,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp = false,
+  canMoveDown = false,
+  canDelete = true,
   adjusting = false,
   adjustDisabled = false,
 }: Props) {
@@ -67,6 +118,8 @@ export function StepCard({
     onTimerChange
   );
   const [blockerOpen, setBlockerOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const timeUp = remaining === 0;
   const adjustLocked = adjusting || adjustDisabled;
   const parentTitle =
@@ -76,6 +129,30 @@ export function StepCard({
     setBlockerOpen(false);
     onAdjust(action, blocker);
   };
+
+  if (editing) {
+    return (
+      <div className="rounded-2xl border-2 border-indigo-300 bg-white p-4 shadow-md sm:p-5">
+        <p className="mb-3 text-xs font-bold uppercase tracking-wide text-indigo-600">
+          Редагування кроку {index + 1}
+        </p>
+        <StepEditor
+          initial={{
+            title: step.title,
+            description: step.description,
+            durationSec: step.durationSec,
+          }}
+          defaultDurationSec={step.durationSec}
+          submitLabel="Зберегти"
+          onSubmit={(input) => {
+            onEdit?.(input);
+            setEditing(false);
+          }}
+          onCancel={() => setEditing(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -121,6 +198,41 @@ export function StepCard({
                 Готово
               </span>
             )}
+
+            <div className="ml-auto flex shrink-0 items-center gap-0.5">
+              <ActionButton
+                label={`Редагувати крок ${index + 1}`}
+                disabled={adjusting}
+                onClick={() => {
+                  setConfirmDelete(false);
+                  setEditing(true);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </ActionButton>
+              <ActionButton
+                label={`Перемістити крок ${index + 1} вгору`}
+                disabled={!canMoveUp || adjusting}
+                onClick={onMoveUp}
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </ActionButton>
+              <ActionButton
+                label={`Перемістити крок ${index + 1} вниз`}
+                disabled={!canMoveDown || adjusting}
+                onClick={onMoveDown}
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </ActionButton>
+              <ActionButton
+                label={`Видалити крок ${index + 1}`}
+                disabled={!canDelete || adjusting}
+                danger
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </ActionButton>
+            </div>
           </div>
           <h3
             className={`mt-0.5 text-base font-semibold leading-snug ${
@@ -129,9 +241,11 @@ export function StepCard({
           >
             {step.title}
           </h3>
-          <p className="mt-1 text-sm leading-relaxed text-slate-700">
-            {step.description}
-          </p>
+          {step.description && (
+            <p className="mt-1 text-sm leading-relaxed text-slate-700">
+              {step.description}
+            </p>
+          )}
 
           {step.origin && (
             <details className="group mt-2 rounded-xl bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600 ring-1 ring-slate-100">
@@ -199,6 +313,33 @@ export function StepCard({
           {formatTime(remaining)}
         </div>
       </div>
+
+      {confirmDelete && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-rose-50 px-3 py-2 ring-1 ring-rose-200">
+          <span className="text-xs font-semibold text-rose-700">
+            Видалити цей крок?
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmDelete(false);
+                onDelete?.();
+              }}
+              className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 active:scale-95"
+            >
+              Видалити
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(false)}
+              className="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 active:scale-95"
+            >
+              Скасувати
+            </button>
+          </div>
+        </div>
+      )}
 
       {timeUp && !done && (
         <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-sm font-medium text-amber-700">

@@ -60,6 +60,15 @@ export function useStepTimer(
     });
   }, []);
 
+  // Якщо користувач змінив тривалість кроку — перезапускаємо таймер
+  // з нового значення (але не чіпаємо відновлений таймер при монтуванні).
+  const prevDurationRef = useRef(durationSec);
+  useEffect(() => {
+    if (prevDurationRef.current === durationSec) return;
+    prevDurationRef.current = durationSec;
+    commit({ remaining: durationSec, isRunning: false, deadline: null });
+  }, [durationSec, commit]);
+
   useEffect(() => {
     if (!state.isRunning || state.deadline == null) return;
 

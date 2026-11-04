@@ -137,6 +137,17 @@ export function createSessionId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+export function createStepId(): string {
+  try {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return crypto.randomUUID();
+    }
+  } catch {
+    /* ignore */
+  }
+  return `step-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function loadSession(): StoredSession | null {
   const store = getStorage();
   if (!store) return null;

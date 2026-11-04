@@ -32,6 +32,13 @@ export interface Step {
   origin?: StepOrigin;
 }
 
+/** Поля кроку, які користувач редагує вручну. */
+export interface StepInput {
+  title: string;
+  description: string;
+  durationSec: number;
+}
+
 export interface ResistanceOption {
   level: ResistanceLevel;
   emoji: string;

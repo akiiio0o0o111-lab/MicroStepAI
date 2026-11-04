@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Brain, RotateCcw, CheckCircle2, Heart } from 'lucide-react';
 import { TaskForm } from '@/components/TaskForm';
 import { StepCard } from '@/components/StepCard';
+import { AddStepCard } from '@/components/AddStepCard';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Confetti } from '@/components/Confetti';
 import { SettingsModal, SettingsButton } from '@/components/SettingsModal';
@@ -13,6 +14,7 @@ import {
   addHistoryEntry,
   clearStoredSession,
   createSessionId,
+  createStepId,
   getStreak,
   loadHistory,
   loadSession,
@@ -26,11 +28,28 @@ import type {
   Step,
   StepAdjustAction,
   StepBlocker,
+  StepInput,
   StepOrigin,
   StepTimerState,
 } from '@/types';
 
 type Phase = 'empty' | 'steps';
+
+const MAX_STEPS = 15;
+
+function stepsWord(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'крок';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'кроки';
+  return 'кроків';
+}
+
+function defaultDurationForLevel(level: ResistanceLevel): number {
+  if (level === 'panic') return 60;
+  if (level === 'hard') return 180;
+  return 300;
+}
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('empty');
@@ -127,6 +146,45 @@ export default function App() {
     setSteps((prev) =>
       prev.map((s) => (s.id === id ? { ...s, timer } : s))
     );
+  }, []);
+
+  const addStep = useCallback((input: StepInput) => {
+    setSteps((prev) =>
+      prev.length >= MAX_STEPS
+        ? prev
+        : [...prev, { id: createStepId(), ...input, done: false }]
+    );
+  }, []);
+
+  const updateStep = useCallback((id: string, input: StepInput) => {
+    setSteps((prev) =>
+      prev.map((s) => {
+        if (s.id !== id) return s;
+        const durationChanged = s.durationSec !== input.durationSec;
+        if (!durationChanged) {
+          return { ...s, title: input.title, description: input.description };
+        }
+        // Нова тривалість — старий таймер більше не актуальний.
+        return { ...s, ...input, timer: undefined };
+      })
+    );
+  }, []);
+
+  const deleteStep = useCallback((id: string) => {
+    setSteps((prev) =>
+      prev.length <= 1 ? prev : prev.filter((s) => s.id !== id)
+    );
+  }, []);
+
+  const moveStep = useCallback((id: string, direction: -1 | 1) => {
+    setSteps((prev) => {
+      const from = prev.findIndex((s) => s.id === id);
+      const to = from + direction;
+      if (from < 0 || to < 0 || to >= prev.length) return prev;
+      const next = [...prev];
+      [next[from], next[to]] = [next[to], next[from]];
+      return next;
+    });
   }, []);
 
   const handleAdjust = useCallback(
@@ -368,6 +426,9 @@ export default function App() {
                   <h2 className="mt-1 text-xl font-bold text-slate-800 sm:text-2xl">
                     {task}
                   </h2>
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    {steps.length} {stepsWord(steps.length)} · {doneCount} виконано
+                  </p>
                 </div>
                 <button
                   onClick={reset}
@@ -439,10 +500,24 @@ export default function App() {
                   onAdjust={(action, blocker) =>
                     handleAdjust(step.id, action, blocker)
                   }
+                  onEdit={(input) => updateStep(step.id, input)}
+                  onDelete={() => deleteStep(step.id)}
+                  onMoveUp={() => moveStep(step.id, -1)}
+                  onMoveDown={() => moveStep(step.id, 1)}
+                  canMoveUp={i > 0}
+                  canMoveDown={i < steps.length - 1}
+                  canDelete={steps.length > 1}
                   adjusting={adjustingStepId === step.id}
                   adjustDisabled={adjustingStepId !== null}
                 />
               ))}
+
+              <AddStepCard
+                defaultDurationSec={defaultDurationForLevel(level)}
+                currentCount={steps.length}
+                maxSteps={MAX_STEPS}
+                onAdd={addStep}
+              />
             </div>
 
             {finished && (
@@ -454,7 +529,7 @@ export default function App() {
                   Ти зробив це!
                 </h3>
                 <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-slate-700">
-                  Три крихітні кроки — а велика справа вже рушила. Похвали себе,
+                  Крихітні кроки — а велика справа вже рушила. Похвали себе,
                   ти заслужив.
                 </p>
                 <button
