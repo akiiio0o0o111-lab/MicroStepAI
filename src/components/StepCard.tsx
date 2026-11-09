@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -112,7 +112,7 @@ export function StepCard({
   adjusting = false,
   adjustDisabled = false,
 }: Props) {
-  const { remaining, isRunning, toggle, reset } = useStepTimer(
+  const { remaining, isRunning, toggle, reset, pause } = useStepTimer(
     step.durationSec,
     step.timer,
     onTimerChange
@@ -120,6 +120,10 @@ export function StepCard({
   const [blockerOpen, setBlockerOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  useEffect(() => {
+    if (done && isRunning) pause();
+  }, [done, isRunning, pause]);
   const timeUp = remaining === 0;
   const adjustLocked = adjusting || adjustDisabled;
   const parentTitle =

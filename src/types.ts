@@ -1,5 +1,8 @@
 export type ResistanceLevel = 'light' | 'hard' | 'panic';
 
+/** Чому замість AI-кроків використано локальні (mock) кроки. */
+export type FallbackReason = 'no-key' | 'error';
+
 export type StepAdjustAction = 'too-big' | 'no-time' | 'stuck';
 
 export type StepBlocker = 'fear' | 'tired' | 'unclear';

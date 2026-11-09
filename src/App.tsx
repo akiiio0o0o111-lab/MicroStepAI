@@ -103,6 +103,13 @@ export default function App() {
       const key = getApiKey();
       const model = getSelectedModel();
       const result = await generateSteps(t, lvl, key, model);
+      if (result.refusal) {
+        setError(result.refusal);
+        setFallbackError(null);
+        setLoading(false);
+        return;
+      }
+
       setSteps(result.steps);
       setSource(result.source);
       setUsedModel(model);
@@ -120,6 +127,9 @@ export default function App() {
         } else if (detail.includes('Таймаут')) {
           message =
             'AI не відповів вчасно. Показано базові кроки — спробуйте ще раз або оберіть іншу модель.';
+        } else if (detail.includes('нерелевантні') || detail.includes('incorrect')) {
+          message =
+            'AI повернув нерелевантні кроки для цієї задачі, тому показано базові кроки. Спробуйте ще раз, уточніть формулювання або оберіть іншу модель у налаштуваннях.';
         }
         setFallbackError(message);
       } else {
@@ -214,17 +224,25 @@ export default function App() {
         return;
       }
 
+      if (result.refusal) {
+        setAdjustNotice(result.refusal);
+        setAdjustingStepId(null);
+        adjustingRef.current = null;
+        return;
+      }
+
       const origin: StepOrigin = {
         lineage: [...(step.origin?.lineage ?? []), step.title],
         action,
         ...(blocker ? { blocker } : {}),
         source: result.source,
       };
-      const derivedSteps = result.steps.map((s) => ({ ...s, origin }));
 
       setSteps((prev) => {
         const current = prev.find((s) => s.id === stepId);
         if (!current || current.done) return prev;
+        const maxDerived = Math.max(1, MAX_STEPS - (prev.length - 1));
+        const derivedSteps = result.steps.slice(0, maxDerived).map((s) => ({ ...s, origin }));
         return prev.flatMap((s) => (s.id === stepId ? derivedSteps : [s]));
       });
 
@@ -238,6 +256,9 @@ export default function App() {
           message = 'API-ключ не прийнято — крок спрощено локально.';
         } else if (detail.includes('Таймаут')) {
           message = 'AI не відповів вчасно — крок спрощено локально.';
+        } else if (detail.includes('нерелевантні') || detail.includes('irrelevant')) {
+          message =
+            'AI повернув нерелевантні кроки — застосовано локальний варіант. Спробуйте ще раз або оберіть іншу модель.';
         }
         setAdjustNotice(message);
       }
