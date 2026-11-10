@@ -41,7 +41,8 @@ export const AI_MODELS: AiModelOption[] = [
   },
 ];
 
-const DEFAULT_MODEL = AI_MODELS[0].id;
+/** Модель за замовчуванням — NVIDIA Nemotron 3.5 Super VL (free). */
+const DEFAULT_MODEL = 'nvidia/nemotron-3.5-super-vl:free';
 const STORAGE_KEY = 'microstep_openrouter_key';
 const MODEL_STORAGE_KEY = 'microstep_openrouter_model';
 const AI_TIMEOUT_MS = 15000;

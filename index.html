@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MicroStep AI — Мій маленький крок</title>
+    <script>
+      // Застосовуємо збережену тему до першого рендеру, щоб не було «блимання».
+      try {
+        var savedTheme = localStorage.getItem('microstep_theme');
+        var prefersDark =
+          window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    </script>
     <meta
       property="og:image"
       content="https://bolt.new/static/og_default.png"

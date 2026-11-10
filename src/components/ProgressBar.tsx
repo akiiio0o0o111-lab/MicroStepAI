@@ -17,16 +17,18 @@ export function ProgressBar({ value }: Props) {
   return (
     <div className="w-full">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-700">Твій прогрес</span>
+        <span className="text-sm font-semibold text-slate-700 dark:text-ice-200">Твій прогрес</span>
         <span
           className={`text-lg font-bold tabular-nums transition-colors ${
-            rounded === 100 ? 'text-emerald-600' : 'text-indigo-600'
+            rounded === 100
+              ? 'text-emerald-600 dark:text-emerald-300'
+              : 'text-indigo-600 dark:text-indigo-300'
           }`}
         >
           {rounded}%
         </span>
       </div>
-      <div className="h-4 w-full overflow-hidden rounded-full bg-slate-200">
+      <div className="h-4 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-night-700">
         <div
           className={`h-full rounded-full transition-all duration-700 ease-out ${
             rounded === 100

@@ -6,9 +6,11 @@ import { AddStepCard } from '@/components/AddStepCard';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Confetti } from '@/components/Confetti';
 import { SettingsModal, SettingsButton } from '@/components/SettingsModal';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { HistoryModal, HistoryButton } from '@/components/HistoryModal';
 import { ResumeCard } from '@/components/ResumeCard';
 import { generateSteps, adjustStep, getApiKey, getModelName, getSelectedModel } from '@/lib/ai';
+import { applyTheme, getStoredTheme, saveTheme, type Theme } from '@/lib/theme';
 import { playFinishFanfare } from '@/lib/sound';
 import {
   addHistoryEntry,
@@ -69,6 +71,7 @@ export default function App() {
   );
   const [history, setHistory] = useState<HistoryEntry[]>(() => loadHistory());
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [theme, setTheme] = useState<Theme>(() => getStoredTheme());
   const [adjustingStepId, setAdjustingStepId] = useState<string | null>(null);
   const [adjustNotice, setAdjustNotice] = useState<string | null>(null);
   const adjustingRef = useRef<string | null>(null);
@@ -323,6 +326,16 @@ export default function App() {
     setFinished(false);
   }, []);
 
+  const toggleTheme = useCallback(() => {
+    setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
+  }, []);
+
+  // Тема застосовується одразу та зберігається між візитами.
+  useEffect(() => {
+    applyTheme(theme);
+    saveTheme(theme);
+  }, [theme]);
+
   // Зберігаємо поточну сесію після кожної зміни кроків, позначок або таймерів.
   useEffect(() => {
     if (phase !== 'steps' || steps.length === 0) return;
@@ -394,23 +407,26 @@ export default function App() {
   }, [phase, steps, task, level, source]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lavender-50 via-indigo-50/40 to-emerald-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-lavender-50 via-indigo-50/40 to-emerald-50/30 transition-colors duration-300 dark:from-night-950 dark:via-night-900 dark:to-night-950">
       <Confetti trigger={confettiTrigger} />
 
-      <header className="sticky top-0 z-30 border-b border-indigo-100/60 bg-white/70 backdrop-blur-lg">
+      <header className="sticky top-0 z-30 border-b border-indigo-100/60 bg-white/70 backdrop-blur-lg dark:border-night-700/70 dark:bg-night-950/80">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-200">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-black/50">
               <Brain className="h-5 w-5" />
             </div>
             <div className="leading-tight">
-              <h1 className="text-base font-bold text-slate-800 sm:text-lg">
+              <h1 className="text-base font-bold text-slate-800 sm:text-lg dark:text-ice-100">
                 MicroStep AI
               </h1>
-              <p className="text-[11px] text-slate-600 sm:text-xs">Мій маленький крок</p>
+              <p className="text-[11px] text-slate-600 sm:text-xs dark:text-ice-300/70">
+                Мій маленький крок
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <HistoryButton onClick={() => setHistoryOpen(true)} streak={streak} />
             <SettingsButton onClick={() => setSettingsOpen(true)} />
           </div>
@@ -438,22 +454,22 @@ export default function App() {
 
         {phase === 'steps' && (
           <div className="space-y-6">
-            <div className="rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-indigo-100 backdrop-blur sm:p-7">
+            <div className="rounded-3xl bg-white/80 p-5 shadow-sm ring-1 ring-indigo-100 backdrop-blur sm:p-7 dark:bg-night-900/80 dark:ring-night-700">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
                     Ти працюєш над
                   </p>
-                  <h2 className="mt-1 text-xl font-bold text-slate-800 sm:text-2xl">
+                  <h2 className="mt-1 text-xl font-bold text-slate-800 sm:text-2xl dark:text-ice-100">
                     {task}
                   </h2>
-                  <p className="mt-1 text-xs font-medium text-slate-500">
+                  <p className="mt-1 text-xs font-medium text-slate-500 dark:text-ice-300/60">
                     {steps.length} {stepsWord(steps.length)} · {doneCount} виконано
                   </p>
                 </div>
                 <button
                   onClick={reset}
-                  className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 hover:text-slate-800"
+                  className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 hover:text-slate-800 dark:bg-night-800 dark:text-ice-200 dark:hover:bg-night-700 dark:hover:text-ice-100"
                 >
                   <RotateCcw className="h-4 w-4" />
                   <span className="hidden sm:inline">Нова справа</span>
@@ -465,13 +481,15 @@ export default function App() {
               </div>
 
               {source && (
-                <p className="mt-3 text-xs text-slate-600">
+                <p className="mt-3 text-xs text-slate-600 dark:text-ice-300/70">
                   {source === 'ai' ? (
                     <span className="inline-flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       Кроки згенеровано через OpenRouter AI
                       {usedModel && (
-                        <span className="text-slate-500"> · {getModelName(usedModel)}</span>
+                        <span className="text-slate-500 dark:text-ice-300/50">
+                          {' '}· {getModelName(usedModel)}
+                        </span>
                       )}
                     </span>
                   ) : fallbackError ? (
@@ -491,7 +509,7 @@ export default function App() {
               {fallbackError && (
                 <div
                   role="alert"
-                  className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-xs font-medium leading-relaxed text-amber-800 ring-1 ring-amber-200"
+                  className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-xs font-medium leading-relaxed text-amber-800 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-200 dark:ring-amber-400/30"
                 >
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>{fallbackError}</span>
@@ -502,7 +520,7 @@ export default function App() {
             {adjustNotice && (
               <div
                 role="alert"
-                className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-xs font-medium leading-relaxed text-amber-800 ring-1 ring-amber-200"
+                className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-xs font-medium leading-relaxed text-amber-800 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-200 dark:ring-amber-400/30"
               >
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                 <span>{adjustNotice}</span>
@@ -542,20 +560,20 @@ export default function App() {
             </div>
 
             {finished && (
-              <div className="animate-[pop_.3s_ease-out] rounded-3xl bg-gradient-to-br from-emerald-50 to-indigo-50 p-6 text-center shadow-sm ring-1 ring-emerald-100">
-                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-100">
-                  <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+              <div className="animate-[pop_.3s_ease-out] rounded-3xl bg-gradient-to-br from-emerald-50 to-indigo-50 p-6 text-center shadow-sm ring-1 ring-emerald-100 dark:from-emerald-500/10 dark:to-indigo-500/10 dark:ring-emerald-400/20">
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-300" />
                 </div>
-                <h3 className="mt-3 text-xl font-bold text-slate-800">
+                <h3 className="mt-3 text-xl font-bold text-slate-800 dark:text-ice-100">
                   Ти зробив це!
                 </h3>
-                <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-slate-700">
+                <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-slate-700 dark:text-ice-200">
                   Крихітні кроки — а велика справа вже рушила. Похвали себе,
                   ти заслужив.
                 </p>
                 <button
                   onClick={reset}
-                  className="mt-4 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 active:scale-[.98]"
+                  className="mt-4 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 active:scale-[.98] dark:shadow-black/40"
                 >
                   Взяти нову справу
                 </button>
@@ -565,14 +583,19 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t border-indigo-100/60 bg-white/50 py-5 backdrop-blur">
-        <p className="mx-auto flex max-w-2xl items-center justify-center gap-1.5 px-4 text-center text-xs text-slate-600">
-          <Heart className="h-3.5 w-3.5 text-rose-500" />
+      <footer className="border-t border-indigo-100/60 bg-white/50 py-5 backdrop-blur dark:border-night-700/70 dark:bg-night-950/60">
+        <p className="mx-auto flex max-w-2xl items-center justify-center gap-1.5 px-4 text-center text-xs text-slate-600 dark:text-ice-300/70">
+          <Heart className="h-3.5 w-3.5 text-rose-500 dark:text-rose-400" />
           Маленькі кроки — великі зміни. Будь ласка до себе.
         </p>
       </footer>
 
-      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        theme={theme}
+        onThemeChange={setTheme}
+      />
       <HistoryModal
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}

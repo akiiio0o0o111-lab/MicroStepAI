@@ -7,10 +7,32 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   body {
     font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif;
-    @apply text-slate-800 antialiased;
+    @apply bg-lavender-50 text-slate-800 antialiased transition-colors duration-300;
+  }
+  html.dark body {
+    @apply bg-night-950 text-ice-200;
+  }
+  ::selection {
+    @apply bg-indigo-200 text-slate-900;
+  }
+  html.dark ::selection {
+    @apply bg-indigo-500/40 text-ice-100;
+  }
+  /* Нативні списки <select> у нічній темі. */
+  html.dark select option {
+    background-color: #0d141c;
+    color: #c9e0ff;
+  }
+  html.dark input::placeholder,
+  html.dark textarea::placeholder {
+    color: rgb(169 204 255 / 0.4);
   }
 }
 

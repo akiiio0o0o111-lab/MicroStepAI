@@ -21,7 +21,7 @@ export function AddStepCard({
 
   if (!canAdd) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white/40 px-4 py-3 text-center text-xs font-medium text-slate-500">
+      <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white/40 px-4 py-3 text-center text-xs font-medium text-slate-500 dark:border-night-700 dark:bg-night-900/40 dark:text-ice-300/60">
         Досягнуто максимум — {maxSteps} кроків
       </div>
     );
@@ -32,7 +32,7 @@ export function AddStepCard({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-white/50 px-4 py-4 text-sm font-semibold text-indigo-600 transition hover:border-indigo-300 hover:bg-indigo-50/60 active:scale-[.99]"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-indigo-200 bg-white/50 px-4 py-4 text-sm font-semibold text-indigo-600 transition hover:border-indigo-300 hover:bg-indigo-50/60 active:scale-[.99] dark:border-indigo-400/30 dark:bg-night-900/50 dark:text-indigo-300 dark:hover:border-indigo-400/50 dark:hover:bg-indigo-500/10"
       >
         <Plus className="h-4 w-4" />
         Додати крок
@@ -41,8 +41,8 @@ export function AddStepCard({
   }
 
   return (
-    <div className="rounded-2xl border-2 border-indigo-300 bg-white p-4 shadow-md sm:p-5">
-      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-indigo-600">
+    <div className="rounded-2xl border-2 border-indigo-300 bg-white p-4 shadow-md sm:p-5 dark:border-indigo-400/40 dark:bg-night-900">
+      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
         Новий крок
       </p>
       <StepEditor
